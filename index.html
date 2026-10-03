@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Despliegue IT - Control Corporativo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- Hoja de estilos principal -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!--
+        ESTRUCTURA GENERAL
+        1. Sidebar: navegación, reloj, acceso administrador y cambio de tema.
+        2. Main content: contiene las vistas de Control, Monitoreo y Gráficas.
+        3. Modales: alertas, autenticación y edición administrativa.
+    -->
+
+    <!-- =========================
+         BARRA LATERAL DE NAVEGACIÓN
+         ========================= -->
+    <div class="sidebar">
+        <div class="brand-container" ondblclick="solicitarAccesoAdmin()">
+            <div class="brand-icon">BNP</div>
+            <div class="brand-text">
+                <span class="top-text">BNP PARIBAS</span>
+                <span class="sub-text">CARDIF</span>
+            </div>
+        </div>
+        
+        <div id="relojBogota" class="reloj-sidebar">Cargando fecha y hora...</div>
+
+        <button class="nav-btn" onclick="cambiarVista('control')">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+            Control Hostname
+        </button>
+        <button class="nav-btn" onclick="cambiarVista('monitoreo')">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/></svg>
+            Monitoreo
+        </button>
+        <button class="nav-btn" onclick="cambiarVista('grafica')">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2 0v8.99h9c-.53-4.83-4.37-8.52-9-8.99zm0 11.01V22c4.63-.47 8.47-4.16 9-8.99h-9z"/></svg>
+            Gráfica
+        </button>
+
+        <button id="btnSalirAdmin" class="btn-admin-exit" onclick="desactivarModoAdmin()">🔒 Salir de Modo Admin</button>
+
+        <button class="btn-theme-toggle" onclick="toggleModoOscuro()">
+            <span id="themeToggleText">Modo Oscuro</span>
+            <span id="themeToggleIcon">🌙</span>
+        </button>
+    </div>
+
+    <!-- =========================
+         CONTENIDO PRINCIPAL
+         ========================= -->
+    <div class="main-content">
+
+        <div id="vista-control" class="vista activa">
+            <div class="card">
+                <h3>Desplegar Nuevo Equipo</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Hostname (Consecutivo) *</label>
+                        <input type="text" id="inHostname" class="input-error input-uppercase" maxlength="12" placeholder="EJ: BOGM00715452" oninput="convertirAMayusculas(this); validarFormularioCompleto()">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección MAC *</label>
+                        <input type="text" id="inMac" class="input-error input-uppercase" placeholder="EJ: 00:1A:2B:3C:4D:5E" oninput="convertirAMayusculas(this); validarFormularioCompleto()">
+                    </div>
+                    <div class="form-group">
+                        <label>Número Serial (Exacto 10 Dígitos) *</label>
+                        <input type="text" id="inSerial" class="input-error input-uppercase" maxlength="10" placeholder="EJ: 1234567890" oninput="convertirAMayusculas(this); validarFormularioCompleto()">
+                    </div>
+                    <div class="form-group">
+                        <label>Modelo HP *</label>
+                        <select id="inModelo" class="input-valido" onchange="validarFormularioCompleto()">
+                            <option value="HP G8">HP G8</option>
+                            <option value="HP G9">HP G9</option>
+                            <option value="HP G11">HP G11</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ingeniero / Usuario Asignado *</label>
+                        <input type="text" id="inIngeniero" class="input-error input-uppercase" placeholder="NOMBRE COMPLETO" oninput="convertirAMayusculas(this); validarFormularioCompleto()">
+                    </div>
+                    <div class="form-group">
+                        <label>Número de Caso (Opcional - Max 3 Días)</label>
+                        <input type="text" id="inCaso" class="input-uppercase" placeholder="EJ: INC102938" oninput="convertirAMayusculas(this); validarFormularioCompleto()">
+                    </div>
+                </div>
+                <button id="btnRegistrar" class="btn-submit" onclick="registrarEquipo()" disabled>Registrar Hostname</button>
+            </div>
+
+            <div class="card">
+                <h3>
+                    Registro Histórico
+                    <div class="header-actions">
+                        <input type="text" id="inBuscar" class="input-search" placeholder="🔍 BUSCAR..." oninput="convertirAMayusculas(this); renderizarTabla()">
+                        <button class="btn-export" onclick="exportarCSV()">
+                            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                            Exportar CSV
+                        </button>
+                        <div class="filtro-fecha">
+                            <select id="filtroMesHistorico" onchange="renderizarTabla()"></select>
+                            <select id="filtroAnoHistorico" onchange="renderizarTabla()"></select>
+                        </div>
+                    </div>
+                </h3>
+                <table>
+                    <thead>
+                        <tr id="encabezadoTabla">
+                            <th>Fecha</th>
+                            <th>Hostname</th>
+                            <th>MAC</th>
+                            <th>Serial</th>
+                            <th>Modelo HP</th>
+                            <th>Ingeniero</th>
+                            <th>Caso</th>
+                            <th>Alerta de Caso</th>
+                            <th>Estado</th>
+                            <th>Historial de Observaciones</th>
+                            <th id="thAccionesAdmin" style="display:none;">Acciones Admin</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaRegistros"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="vista-monitoreo" class="vista">
+            <div class="card">
+                <h3>
+                    Métricas de Despliegue
+                    <div class="filtro-fecha">
+                        <select id="filtroMesMonitoreo" onchange="sincronizarFiltros('monitoreo')"></select>
+                        <select id="filtroAnoMonitoreo" onchange="sincronizarFiltros('monitoreo')"></select>
+                    </div>
+                </h3>
+
+                <div class="health-bar-wrapper">
+                    <div class="health-bar-info">
+                        <span>Salud Global del Despliegue</span>
+                        <span id="healthPercent">0% Exitoso</span>
+                    </div>
+                    <div class="health-bar-bg">
+                        <div id="healthFill" class="health-bar-fill"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="stat-box box-funciono">
+                        <h4>Equipos Exitosos (Funcionó)</h4>
+                        <p class="numero" id="countFunciono">0</p>
+                    </div>
+                    <div class="stat-box box-fallo">
+                        <h4>Equipos con Fallas</h4>
+                        <p class="numero" id="countFallo">0</p>
+                    </div>
+                    <div class="stat-box box-descarto">
+                        <h4>Equipos Descartados</h4>
+                        <p class="numero" id="countDescarto">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="vista-grafica" class="vista">
+            <div class="card">
+                <h3>
+                    Análisis Visual de Despliegues
+                    <div class="filtro-fecha">
+                        <select id="filtroMesGrafica" onchange="sincronizarFiltros('grafica')"></select>
+                        <select id="filtroAnoGrafica" onchange="sincronizarFiltros('grafica')"></select>
+                    </div>
+                </h3>
+                
+                <div class="charts-flex-container">
+                    <div class="chart-box">
+                        <h4>Estados de Despliegue</h4>
+                        <div class="chart-container">
+                            <canvas id="miGraficaEstados"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-box">
+                        <h4>Modelos HP según Estado Reportado</h4>
+                        <div class="chart-container">
+                            <canvas id="miGraficaModelos"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- =========================
+         MODALES Y ALERTAS
+         ========================= -->
+    <div id="customAlert" class="custom-alert-overlay">
+        <div class="custom-alert-box">
+            <p id="customAlertMessage">Mensaje de alerta</p>
+            <input type="text" id="customInputObs" style="display:none;" placeholder="Ingrese la información solicitada..." oninput="convertirAMayusculas(this)" onkeyup="if(event.key==='Enter') cerrarAlertaPersonalizada()">
+            <div class="modal-buttons">
+                <button class="btn-modal-confirm" onclick="cerrarAlertaPersonalizada()">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalAdminAuth" class="custom-alert-overlay">
+        <div class="custom-alert-box">
+            <p>🔒 ACCESO ADMINISTRADOR<br><span style="font-size:12px; font-weight:normal; color:#666;">Ingrese la contraseña para habilitar la edición total y eliminación de registros:</span></p>
+            <input type="password" id="inputAdminPassword" placeholder="Contraseña..." onkeyup="if(event.key==='Enter') verificarPasswordAdmin()">
+            <div class="modal-buttons">
+                <button class="btn-modal-confirm" onclick="verificarPasswordAdmin()">Acceder</button>
+                <button class="btn-modal-cancel" onclick="cerrarModalAdminAuth()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalAdminEdit" class="custom-alert-overlay">
+        <div class="custom-alert-box" style="max-width:600px; text-align:left;">
+            <p style="text-align:center;">✏️ EDITAR REGISTRO (ADMINISTRADOR)</p>
+            <input type="hidden" id="editRegId">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Hostname</label>
+                    <input type="text" id="editHostname" class="input-uppercase" oninput="convertirAMayusculas(this)">
+                </div>
+                <div class="form-group">
+                    <label>MAC</label>
+                    <input type="text" id="editMac" class="input-uppercase" oninput="convertirAMayusculas(this)">
+                </div>
+                <div class="form-group">
+                    <label>Serial</label>
+                    <input type="text" id="editSerial" class="input-uppercase" maxlength="10" oninput="convertirAMayusculas(this)">
+                </div>
+                <div class="form-group">
+                    <label>Modelo HP</label>
+                    <select id="editModelo">
+                        <option value="HP G8">HP G8</option>
+                        <option value="HP G9">HP G9</option>
+                        <option value="HP G11">HP G11</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ingeniero</label>
+                    <input type="text" id="editIngeniero" class="input-uppercase" oninput="convertirAMayusculas(this)">
+                </div>
+                <div class="form-group">
+                    <label>Caso</label>
+                    <input type="text" id="editCaso" class="input-uppercase" oninput="convertirAMayusculas(this)">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Estado</label>
+                    <select id="editEstado">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Funcionó">Funcionó</option>
+                        <option value="Falló">Falló</option>
+                        <option value="Se descartó">Se descartó</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-buttons" style="margin-top:20px;">
+                <button class="btn-modal-confirm" onclick="guardarEdicionAdmin()">Guardar Cambios</button>
+                <button class="btn-modal-cancel" onclick="cerrarModalAdminEdit()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+        <!-- Lógica principal de la aplicación -->
+    <script src="script.js"></script>
+</body>
+</html>
