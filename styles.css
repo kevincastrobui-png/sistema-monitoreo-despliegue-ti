@@ -360,3 +360,79 @@ table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13p
         .btn-modal-cancel:hover { background-color: #5a6268; }
 
         .svg-icon { width: 16px; height: 16px; fill: currentColor; vertical-align: middle; }
+
+/* ---------- RESUMEN POR MODELO / PROCESAMIENTO CON BUCLE ---------- */
+.summary-model-card {
+    margin-top: 22px;
+    padding: 20px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    background: var(--card-bg);
+}
+
+.summary-model-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.summary-model-header h4 {
+    margin: 0 0 4px 0;
+    color: var(--verde-primario);
+    font-size: 17px;
+}
+
+.summary-model-header p {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.78;
+}
+
+.loop-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 10px;
+    border-radius: 16px;
+    background: var(--verde-claro);
+    color: var(--verde-oscuro);
+    border: 1px solid var(--verde-primario);
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.summary-model-table-wrapper {
+    overflow-x: auto;
+}
+
+.summary-model-table {
+    margin-top: 0;
+    min-width: 720px;
+}
+
+.summary-model-table th,
+.summary-model-table td {
+    text-align: center;
+}
+
+.summary-model-table th:first-child,
+.summary-model-table td:first-child {
+    text-align: left;
+}
+
+.summary-model-table tbody tr:hover {
+    background-color: var(--verde-claro);
+}
+
+.summary-empty {
+    text-align: center !important;
+    padding: 18px !important;
+    opacity: 0.75;
+}
+
+body.dark-theme .loop-badge {
+    color: #9fe2c5;
+}

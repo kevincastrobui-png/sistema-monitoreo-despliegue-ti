@@ -124,40 +124,38 @@ function actualizarRelojBogota() {
         }
 
         // ============================================================
-// MODO ADMINISTRADOR
-// Controla autenticación, edición y eliminación de registros.
-// IMPORTANTE: una contraseña en JavaScript del navegador NO es
-// segura para producción. Para seguridad real debe validarse
-// desde un backend.
+// MODO ADMINISTRADOR DE DEMOSTRACIÓN
+// Controla edición y eliminación de registros en el prototipo público.
+// IMPORTANTE: esta versión no contiene contraseñas ni credenciales.
+// Para producción, la autenticación debe implementarse en un backend.
 // ============================================================
 
 function solicitarAccesoAdmin() {
             if (esModoAdmin) {
-                mostrarAlertaPersonalizada("YA SE ENCUENTRA EN MODO ADMINISTRADOR.");
+                mostrarAlertaPersonalizada("YA SE ENCUENTRA EN MODO ADMINISTRADOR DE DEMOSTRACIÓN.");
                 return;
             }
-            document.getElementById('inputAdminPassword').value = '';
             document.getElementById('modalAdminAuth').classList.add('activa');
-            setTimeout(() => document.getElementById('inputAdminPassword').focus(), 100);
         }
 
         function cerrarModalAdminAuth() {
             document.getElementById('modalAdminAuth').classList.remove('activa');
         }
 
+        // Acceso de demostración para la versión pública.
+        // No contiene contraseñas ni credenciales reales.
+        function activarModoDemoAdmin() {
+            esModoAdmin = true;
+            cerrarModalAdminAuth();
+            document.getElementById('btnSalirAdmin').style.display = 'block';
+            document.getElementById('thAccionesAdmin').style.display = 'table-cell';
+            renderizarTabla();
+            mostrarAlertaPersonalizada("MODO ADMINISTRADOR DE DEMOSTRACIÓN ACTIVADO.<br><br>Las funciones de edición y eliminación están disponibles únicamente para fines académicos.");
+        }
+
+        // Mantiene compatibilidad con cualquier llamada existente.
         function verificarPasswordAdmin() {
-            const pass = document.getElementById('inputAdminPassword').value;
-            if (pass === "NN") {
-                esModoAdmin = true;
-                cerrarModalAdminAuth();
-                document.getElementById('btnSalirAdmin').style.display = 'block';
-                document.getElementById('thAccionesAdmin').style.display = 'table-cell';
-                renderizarTabla();
-                mostrarAlertaPersonalizada("MÓDULO ADMINISTRADOR ACTIVADO.<br><br>Ahora puede modificar todos los campos y eliminar registros.");
-            } else {
-                alert("CONTRASEÑA INCORRECTA. ACCESO DENEGADO.");
-                document.getElementById('inputAdminPassword').value = '';
-            }
+            activarModoDemoAdmin();
         }
 
         function desactivarModoAdmin() {
@@ -386,6 +384,16 @@ function inicializarFiltrosFechas() {
                 const fechaReg = new Date(reg.fechaISO);
                 const estadoValido = reg.estadoConfirmado && (reg.estado === 'Funcionó' || reg.estado === 'Falló' || reg.estado === 'Se descartó');
                 return estadoValido && fechaReg.getMonth() === mesSeleccionado && fechaReg.getFullYear() === anoSeleccionado;
+            });
+        }
+
+function obtenerTodosLosRegistrosDelMes() {
+            const mesSeleccionado = parseInt(document.getElementById('filtroMesMonitoreo').value);
+            const anoSeleccionado = parseInt(document.getElementById('filtroAnoMonitoreo').value);
+
+            return registrosIT.filter(reg => {
+                const fechaReg = new Date(reg.fechaISO);
+                return fechaReg.getMonth() === mesSeleccionado && fechaReg.getFullYear() === anoSeleccionado;
             });
         }
 
@@ -679,6 +687,7 @@ function renderizarTabla() {
 
 function actualizarMonitoreoYGrafica() {
             const datosDelMes = obtenerDatosFiltradosMonitoreo();
+            const datosDelMesResumen = obtenerTodosLosRegistrosDelMes();
 
             let funcionaron = datosDelMes.filter(r => r.estado === 'Funcionó').length;
             let fallaron = datosDelMes.filter(r => r.estado === 'Falló').length;
@@ -707,7 +716,73 @@ function actualizarMonitoreoYGrafica() {
             let falloPorModelo = modelos.map(mod => datosHistoricosMes.filter(r => r.modelo === mod && r.estado === 'Falló').length);
             let descPorModelo = modelos.map(mod => datosHistoricosMes.filter(r => r.modelo === mod && r.estado === 'Se descartó').length);
 
+            actualizarResumenPorModelo(datosDelMesResumen);
             dibujarGraficas(funcionaron, fallaron, descartados, funcPorModelo, falloPorModelo, descPorModelo);
+        }
+
+        // ============================================================
+// BUCLES DE PROGRAMACIÓN - RESUMEN POR MODELO
+// Recorre los registros del periodo seleccionado para contar
+// cada estado y luego recorre los modelos para construir la tabla.
+// ============================================================
+function actualizarResumenPorModelo(datosDelMes) {
+            const resumen = {};
+
+            // Bucle 1: procesa uno a uno los registros del periodo.
+            for (let i = 0; i < datosDelMes.length; i++) {
+                const registro = datosDelMes[i];
+                const modelo = registro.modelo || 'Sin modelo';
+
+                if (!resumen[modelo]) {
+                    resumen[modelo] = {
+                        total: 0,
+                        funciono: 0,
+                        fallo: 0,
+                        descarto: 0,
+                        pendiente: 0
+                    };
+                }
+
+                resumen[modelo].total++;
+
+                if (registro.estado === 'Funcionó') {
+                    resumen[modelo].funciono++;
+                } else if (registro.estado === 'Falló') {
+                    resumen[modelo].fallo++;
+                } else if (registro.estado === 'Se descartó') {
+                    resumen[modelo].descarto++;
+                } else {
+                    resumen[modelo].pendiente++;
+                }
+            }
+
+            const modelos = Object.keys(resumen).sort();
+            const tbody = document.getElementById('tablaResumenModelos');
+
+            if (modelos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="summary-empty">Sin registros para el periodo seleccionado.</td></tr>';
+                return;
+            }
+
+            let filasHTML = '';
+
+            // Bucle 2: construye visualmente una fila por cada modelo encontrado.
+            for (let j = 0; j < modelos.length; j++) {
+                const modelo = modelos[j];
+                const datos = resumen[modelo];
+
+                filasHTML += `
+                    <tr>
+                        <td><strong>${modelo}</strong></td>
+                        <td>${datos.total}</td>
+                        <td>${datos.funciono}</td>
+                        <td>${datos.fallo}</td>
+                        <td>${datos.descarto}</td>
+                        <td>${datos.pendiente}</td>
+                    </tr>`;
+            }
+
+            tbody.innerHTML = filasHTML;
         }
 
         function dibujarGraficas(funcionaron, fallaron, descartados, funcPorModelo, falloPorModelo, descPorModelo) {

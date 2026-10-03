@@ -162,6 +162,33 @@
                         <p class="numero" id="countDescarto">0</p>
                     </div>
                 </div>
+
+                <div class="summary-model-card">
+                    <div class="summary-model-header">
+                        <div>
+                            <h4>Resumen detallado por modelo</h4>
+                            <p>Conteo automático de los registros del periodo seleccionado.</p>
+                        </div>
+                        <span class="loop-badge">Procesamiento automático</span>
+                    </div>
+                    <div class="summary-model-table-wrapper">
+                        <table class="summary-model-table">
+                            <thead>
+                                <tr>
+                                    <th>Modelo</th>
+                                    <th>Total</th>
+                                    <th>Funcionó</th>
+                                    <th>Falló</th>
+                                    <th>Descartado</th>
+                                    <th>Pendiente</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaResumenModelos">
+                                <tr><td colspan="6" class="summary-empty">Sin registros para el periodo seleccionado.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -209,10 +236,9 @@
 
     <div id="modalAdminAuth" class="custom-alert-overlay">
         <div class="custom-alert-box">
-            <p>🔒 ACCESO ADMINISTRADOR<br><span style="font-size:12px; font-weight:normal; color:#666;">Ingrese la contraseña para habilitar la edición total y eliminación de registros:</span></p>
-            <input type="password" id="inputAdminPassword" placeholder="Contraseña..." onkeyup="if(event.key==='Enter') verificarPasswordAdmin()">
+            <p>🧪 MODO ADMINISTRADOR DE DEMOSTRACIÓN<br><span style="font-size:12px; font-weight:normal; color:#666;">La versión pública no contiene contraseñas ni credenciales. Active este modo únicamente para probar las funciones de edición y eliminación.</span></p>
             <div class="modal-buttons">
-                <button class="btn-modal-confirm" onclick="verificarPasswordAdmin()">Acceder</button>
+                <button class="btn-modal-confirm" onclick="activarModoDemoAdmin()">Activar demostración</button>
                 <button class="btn-modal-cancel" onclick="cerrarModalAdminAuth()">Cancelar</button>
             </div>
         </div>
